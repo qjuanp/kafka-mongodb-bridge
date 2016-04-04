@@ -2,6 +2,7 @@
 
 var MongoClient = require('mongodb').MongoClient;
 var kafka = require('kafka-node');
+var moment = require('moment');
 var Consumer = kafka.Consumer;
 var Offset = kafka.Offset;
 var Client = kafka.Client;
@@ -25,7 +26,9 @@ MongoClient.connect("mongodb://localhost:3001/meteor", function(err, db) {
       
         consumer.on('message', function (message) {
             console.log("put message",message.value);
-            collection.insert(message.value);
+            var measure = message.value;
+            message.diff = moment().diff(measure.ts,'seconds')
+            collection.insert(measure);
         });
 
         consumer.on('error', function (err) {
