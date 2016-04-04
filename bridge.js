@@ -1,5 +1,6 @@
 'use strict';
 
+var MongoClient = require('mongodb').MongoClient;
 var kafka = require('kafka-node');
 var Consumer = kafka.Consumer;
 var Offset = kafka.Offset;
@@ -16,13 +17,23 @@ var topics = [
 var consumer = new Consumer(client, topics, options);
 var offset = new Offset(client);
 
-consumer.on('message', function (message) {
-    console.log(message.value);
+MongoClient.connect("mongodb://localhost:3001/meteor", function(err, db) {
+  if(err) { return console.dir(err); }
+
+  db.collection('temperatures', function(err, collection) {
+        console.log("Ready to put data");
+      
+        consumer.on('message', function (message) {
+            console.log("put message",message.value);
+            collection.insert(message.value);
+        });
+
+        consumer.on('error', function (err) {
+            console.log('error', err);
+        });      
+  });
 });
 
-consumer.on('error', function (err) {
-    console.log('error', err);
-});
 
 console.log('all up');
 
