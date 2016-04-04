@@ -18,7 +18,7 @@ var topics = [
 var consumer = new Consumer(client, topics, options);
 var offset = new Offset(client);
 
-MongoClient.connect("mongodb://localhost:3001/meteor", function(err, db) {
+MongoClient.connect("mongodb://localhost:8081/meteor", function(err, db) {
   if(err) { return console.dir(err); }
 
   db.collection('temperatures', function(err, collection) {
@@ -26,9 +26,25 @@ MongoClient.connect("mongodb://localhost:3001/meteor", function(err, db) {
       
         consumer.on('message', function (message) {
             console.log("put message",message.value);
-            var measure = message.value;
-            message.diff = moment().diff(measure.ts,'seconds')
-            collection.insert(measure);
+            var measure = JSON.parse(message.value);
+	    console.log("Measure type", typeof measure);
+
+	    var now = moment();
+	    var ts = moment(measure.ts);
+
+	    console.log('now',now.format());
+	    console.log('ts',ts.format());
+            var diff = now.diff(ts,'seconds');
+	    console.log('Processed in', diff);
+	    
+            var mr = {
+			id:measure.id,
+			tmp:measure.tmp,
+			ts:measure.ts,
+			diff:diff
+		};
+	    console.log('Ready to save',mr);
+	    collection.insert(mr);
         });
 
         consumer.on('error', function (err) {
